@@ -3,27 +3,45 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { nixpkgs, ... }:
-    let
-      systems = [ "x86_64-linux" ];
-      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
-    in {
-      overlays.default = final: prev: {
-        mkUnimusPackage = final.callPackage ./pkgs/mk-unimus-package.nix { };
+  outputs = {
+    self,
+    nixpkgs,
+    flake-utils,
+  }:
+    {
+      overlays = {
+        unimus = final: prev: {
+          mkUnimusPackage = final.callPackage ./pkgs/mk-unimus-package.nix { };
+          unimus = final.callPackage ./pkgs/unimus.nix { };
+          unimus-core = final.callPackage ./pkgs/unimus-core.nix { };
+        };
+
+        default = self.overlays.unimus;
       };
 
-      checks = forAllSystems (pkgs: {
-        nixos = import ./tests/nixos.nix { inherit pkgs; };
-        jars-vm = import ./tests/jars-vm.nix { inherit pkgs; };
-      });
+      nixosModules = {
+        unimus = import ./modules/unimus.nix;
+        default = self.nixosModules.unimus;
+      };
+    }
+    // flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in {
+        formatter = pkgs.alejandra;
 
-      nixosTests = forAllSystems (pkgs: {
-        unimus = import ./tests/nixos.nix { inherit pkgs; };
-        unimus-jars = import ./tests/jars-vm.nix { inherit pkgs; };
-      });
+        packages = {
+          unimus = pkgs.callPackage ./pkgs/unimus.nix { };
+          unimus-core = pkgs.callPackage ./pkgs/unimus-core.nix { };
+          default = pkgs.callPackage ./pkgs/unimus.nix { };
+        };
 
-      nixosModules.default = import ./modules/unimus.nix;
-    };
+        checks = {
+          nixos = import ./tests/nixos.nix { inherit pkgs; };
+          jars-vm = import ./tests/jars-vm.nix { inherit pkgs; };
+        };
+      });
 }

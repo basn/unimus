@@ -6,6 +6,7 @@ This flake provides:
 - a NixOS module for `services.unimus.core`
 - an optional nginx reverse proxy for the server UI
 - a helper for packaging the official upstream JARs
+- package outputs for `unimus` and `unimus-core`
 
 ## Upstream JARs
 
@@ -40,6 +41,14 @@ Pinned hashes:
 
 ## Package Helper
 
+The flake also exposes:
+
+- `packages.<system>.unimus`
+- `packages.<system>.unimus-core`
+- overlay `overlays.unimus`
+
+So if you apply the overlay you can use `pkgs.unimus` and `pkgs.unimus-core` directly, in the same style as your `wazuh.nix` repo.
+
 The helper in [pkgs/mk-unimus-package.nix](/home/basn/git/unimus/pkgs/mk-unimus-package.nix) wraps a JAR and creates a launcher equivalent to:
 
 ```sh
@@ -52,13 +61,7 @@ Example:
 {
   nixpkgs.overlays = [ unimus.overlays.default ];
 
-  services.unimus.server.package = pkgs.mkUnimusPackage {
-    pname = "unimus";
-    jar = pkgs.fetchurl {
-      url = "https://download.unimus.net/unimus/2.8.0/Unimus.jar";
-      hash = "sha256-fMpxC45zUGTTqUXlqEUUNIMkZsh5YhsKCMWDOLMwYfU=";
-    };
-  };
+  services.unimus.server.package = pkgs.unimus;
 }
 ```
 
@@ -106,13 +109,7 @@ Example with `sops-nix`:
 
   services.unimus.server = {
     enable = true;
-    package = pkgs.mkUnimusPackage {
-      pname = "unimus";
-      jar = pkgs.fetchurl {
-        url = "https://download.unimus.net/unimus/2.8.0/Unimus.jar";
-        hash = "sha256-fMpxC45zUGTTqUXlqEUUNIMkZsh5YhsKCMWDOLMwYfU=";
-      };
-    };
+    package = pkgs.unimus;
 
     properties = {
       "database.type" = "POSTGRESQL";
@@ -140,13 +137,7 @@ The file contents are read during `preStart` and appended into the generated pro
 {
   services.unimus.server = {
     enable = true;
-    package = pkgs.mkUnimusPackage {
-      pname = "unimus";
-      jar = pkgs.fetchurl {
-        url = "https://download.unimus.net/unimus/2.8.0/Unimus.jar";
-        hash = "sha256-fMpxC45zUGTTqUXlqEUUNIMkZsh5YhsKCMWDOLMwYfU=";
-      };
-    };
+    package = pkgs.unimus;
 
     port = 8085;
     openFirewall = true;
@@ -173,13 +164,7 @@ The file contents are read during `preStart` and appended into the generated pro
 {
   services.unimus.core = {
     enable = true;
-    package = pkgs.mkUnimusPackage {
-      pname = "unimus-core";
-      jar = pkgs.fetchurl {
-        url = "https://download.unimus.net/unimus-core/2.8.0/Unimus-Core.jar";
-        hash = "sha256-74iiH12LmMZbxksiWqDH304fuT0wrex9bj9wLs7w22E=";
-      };
-    };
+    package = pkgs.unimus-core;
 
     properties = {
       "unimus.address" = "10.10.10.10";
@@ -196,13 +181,7 @@ The file contents are read during `preStart` and appended into the generated pro
 {
   services.unimus.server = {
     enable = true;
-    package = pkgs.mkUnimusPackage {
-      pname = "unimus";
-      jar = pkgs.fetchurl {
-        url = "https://download.unimus.net/unimus/2.8.0/Unimus.jar";
-        hash = "sha256-fMpxC45zUGTTqUXlqEUUNIMkZsh5YhsKCMWDOLMwYfU=";
-      };
-    };
+    package = pkgs.unimus;
 
     listenAddress = "127.0.0.1";
     port = 8085;
