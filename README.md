@@ -10,13 +10,13 @@ This flake provides:
 
 ## Upstream JARs
 
-- Unimus `2.8.0`: `https://download.unimus.net/unimus/2.8.0/Unimus.jar`
-- Unimus Core `2.8.0`: `https://download.unimus.net/unimus-core/2.8.0/Unimus-Core.jar`
+- Unimus `2.9.1`: `https://download.unimus.net/unimus/2.9.1/Unimus.jar`
+- Unimus Core `2.9.1`: `https://download.unimus.net/unimus-core/2.9.1/Unimus-Core.jar`
 
 Pinned hashes:
 
-- `Unimus.jar`: `sha256-fMpxC45zUGTTqUXlqEUUNIMkZsh5YhsKCMWDOLMwYfU=`
-- `Unimus-Core.jar`: `sha256-74iiH12LmMZbxksiWqDH304fuT0wrex9bj9wLs7w22E=`
+- `Unimus.jar`: `sha256-j8o5Sw/GDpnd3HVOjSZ5Fwc6S8pLasSNBdvMAYVjhZE=`
+- `Unimus-Core.jar`: `sha256-QJlj0MaOaDiorNdw8rri7CgNpz6magXPAR9FbZFIn+4=`
 
 ## Flake Usage
 
@@ -219,4 +219,4 @@ Available test coverage:
 - [tests/nixos.nix](/home/basn/git/unimus/tests/nixos.nix)
   Covers the NixOS module with fake server/core services and nginx, including `propertiesFromFiles`.
 - [tests/jars-vm.nix](/home/basn/git/unimus/tests/jars-vm.nix)
-  Boots a VM and verifies the real upstream `2.8.0` JAR packages start and print their version banners.
+  Boots a VM and verifies the real upstream `2.9.1` JAR packages start and print their version banners.
