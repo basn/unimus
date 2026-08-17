@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   inherit (lib)
     concatStringsSep
@@ -13,7 +18,8 @@ let
     mkOption
     optional
     optionalAttrs
-    types;
+    types
+    ;
 
   cfg = config.services.unimus;
 
@@ -59,13 +65,23 @@ let
       };
 
       sslCertificate = mkOption {
-        type = types.nullOr (types.oneOf [ types.path types.str ]);
+        type = types.nullOr (
+          types.oneOf [
+            types.path
+            types.str
+          ]
+        );
         default = null;
         description = "Manual certificate path for nginx.";
       };
 
       sslCertificateKey = mkOption {
-        type = types.nullOr (types.oneOf [ types.path types.str ]);
+        type = types.nullOr (
+          types.oneOf [
+            types.path
+            types.str
+          ]
+        );
         default = null;
         description = "Manual private key path for nginx.";
       };
@@ -160,7 +176,14 @@ let
     };
 
     properties = mkOption {
-      type = types.attrsOf (types.oneOf [ types.str types.int types.bool types.path ]);
+      type = types.attrsOf (
+        types.oneOf [
+          types.str
+          types.int
+          types.bool
+          types.path
+        ]
+      );
       default = { };
       example = literalExpression ''
         {
@@ -173,7 +196,12 @@ let
     };
 
     propertiesFromFiles = mkOption {
-      type = types.attrsOf (types.oneOf [ types.path types.str ]);
+      type = types.attrsOf (
+        types.oneOf [
+          types.path
+          types.str
+        ]
+      );
       default = { };
       example = literalExpression ''
         {
@@ -188,7 +216,14 @@ let
     };
 
     javaProperties = mkOption {
-      type = types.attrsOf (types.oneOf [ types.str types.int types.bool types.path ]);
+      type = types.attrsOf (
+        types.oneOf [
+          types.str
+          types.int
+          types.bool
+          types.path
+        ]
+      );
       default = { };
       description = "Properties exposed as `-Dkey=value` in `JAVA_OPTS`.";
     };
@@ -212,13 +247,23 @@ let
     };
 
     certificateFile = mkOption {
-      type = types.nullOr (types.oneOf [ types.path types.str ]);
+      type = types.nullOr (
+        types.oneOf [
+          types.path
+          types.str
+        ]
+      );
       default = null;
       description = "Convenience path exposed as a Java property when set.";
     };
 
     certificateKeyFile = mkOption {
-      type = types.nullOr (types.oneOf [ types.path types.str ]);
+      type = types.nullOr (
+        types.oneOf [
+          types.path
+          types.str
+        ]
+      );
       default = null;
       description = "Convenience path exposed as a Java property when set.";
     };
@@ -236,23 +281,30 @@ let
     };
   };
 
-  mkJavaPropertyArgs = attrs:
-    mapAttrsToList (name: value: "-D${name}=${toString value}") attrs;
+  mkJavaPropertyArgs = attrs: mapAttrsToList (name: value: "-D${name}=${toString value}") attrs;
 
-  mkPropertiesFile = serviceCfg:
-    pkgs.writeText "${serviceCfg.propertiesFileName}" (
-      generators.toKeyValue { } serviceCfg.properties
-    );
+  mkPropertiesFile =
+    serviceCfg:
+    pkgs.writeText "${serviceCfg.propertiesFileName}" (generators.toKeyValue { } serviceCfg.properties);
 
-  mkService = name: serviceCfg:
+  mkService =
+    name: serviceCfg:
     let
       propertiesFile = mkPropertiesFile serviceCfg;
       javaPropertyArgs =
         mkJavaPropertyArgs serviceCfg.javaProperties
-        ++ optional (serviceCfg.listenAddressProperty != null) "-D${serviceCfg.listenAddressProperty}=${serviceCfg.listenAddress}"
-        ++ optional (serviceCfg.portProperty != null && serviceCfg.port > 0) "-D${serviceCfg.portProperty}=${toString serviceCfg.port}"
-        ++ optional (serviceCfg.certificateFile != null) "-Dunimus.certificate.file=${toString serviceCfg.certificateFile}"
-        ++ optional (serviceCfg.certificateKeyFile != null) "-Dunimus.certificate.key-file=${toString serviceCfg.certificateKeyFile}";
+        ++ optional (
+          serviceCfg.listenAddressProperty != null
+        ) "-D${serviceCfg.listenAddressProperty}=${serviceCfg.listenAddress}"
+        ++ optional (
+          serviceCfg.portProperty != null && serviceCfg.port > 0
+        ) "-D${serviceCfg.portProperty}=${toString serviceCfg.port}"
+        ++ optional (
+          serviceCfg.certificateFile != null
+        ) "-Dunimus.certificate.file=${toString serviceCfg.certificateFile}"
+        ++ optional (
+          serviceCfg.certificateKeyFile != null
+        ) "-Dunimus.certificate.key-file=${toString serviceCfg.certificateKeyFile}";
       javaOpts = concatStringsSep " " (serviceCfg.javaOpts ++ javaPropertyArgs);
     in
     {
@@ -260,6 +312,7 @@ let
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
+      path = [ pkgs.hostname ];
 
       serviceConfig = {
         Type = "simple";
@@ -272,30 +325,28 @@ let
         RestartSec = 5;
       };
 
-      environment =
-        {
-          JAVA_OPTS = javaOpts;
-          UNIMUS_STATE_DIR = serviceCfg.stateDir;
-          UNIMUS_LOG_DIR = serviceCfg.logDir;
-          UNIMUS_CONFIG_DIR = serviceCfg.configDir;
-        }
-        // serviceCfg.environment;
+      environment = {
+        JAVA_OPTS = javaOpts;
+        UNIMUS_STATE_DIR = serviceCfg.stateDir;
+        UNIMUS_LOG_DIR = serviceCfg.logDir;
+        UNIMUS_CONFIG_DIR = serviceCfg.configDir;
+      }
+      // serviceCfg.environment;
 
       preStart = ''
         install -d -m0750 -o ${serviceCfg.user} -g ${serviceCfg.group} ${serviceCfg.stateDir}
         install -d -m0750 -o ${serviceCfg.user} -g ${serviceCfg.group} ${serviceCfg.logDir}
         install -d -m0750 -o ${serviceCfg.user} -g ${serviceCfg.group} ${serviceCfg.configDir}
         install -m0640 -o ${serviceCfg.user} -g ${serviceCfg.group} ${propertiesFile} ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
-      '' + lib.concatStringsSep "" (
-        mapAttrsToList
-          (name: path: ''
-            printf '%s=%s\n' '${name}' "$(${pkgs.coreutils}/bin/tr -d '\r\n' < ${lib.escapeShellArg (toString path)})" >> ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
-            chown ${serviceCfg.user}:${serviceCfg.group} ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
-            chmod 0640 ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
-          '')
-          serviceCfg.propertiesFromFiles
-      ) + ''
-      '';
+      ''
+      + lib.concatStringsSep "" (
+        mapAttrsToList (name: path: ''
+          printf '%s=%s\n' '${name}' "$(${pkgs.coreutils}/bin/tr -d '\r\n' < ${lib.escapeShellArg (toString path)})" >> ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
+          chown ${serviceCfg.user}:${serviceCfg.group} ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
+          chmod 0640 ${serviceCfg.configDir}/${serviceCfg.propertiesFileName}
+        '') serviceCfg.propertiesFromFiles
+      )
+      + "";
 
       script = ''
         exec ${serviceCfg.package}/bin/${serviceCfg.binary} ${escapeShellArgs serviceCfg.args}
@@ -332,7 +383,8 @@ let
         {
           addr = "0.0.0.0";
           port = serviceCfg.reverseProxy.port;
-          ssl = serviceCfg.reverseProxy.forceSSL
+          ssl =
+            serviceCfg.reverseProxy.forceSSL
             || serviceCfg.reverseProxy.enableACME
             || serviceCfg.reverseProxy.useACMEHost != null
             || serviceCfg.reverseProxy.sslCertificate != null;
@@ -344,31 +396,33 @@ in
 {
   options.services.unimus = {
     server = mkOption {
-      type = types.submodule ({ ... }: {
-        options =
-          serviceModule "server" {
-            jarName = "unimus.jar";
-            binary = "unimus";
-            user = "unimus";
-            group = "unimus";
-            listenAddress = "127.0.0.1";
-            port = 8085;
-            extraPorts = [ 5509 ];
-            stateDir = "/var/lib/unimus";
-            logDir = "/var/log/unimus";
-            configDir = "/etc/unimus";
-            propertiesFileName = "unimus.properties";
-            listenAddressProperty = "server.address";
-            portProperty = "server.port";
-          }
-          // {
-            reverseProxy = mkOption {
-              type = proxyModule;
-              default = { };
-              description = "Optional nginx reverse proxy configuration for the web UI.";
+      type = types.submodule (
+        { ... }: {
+          options =
+            serviceModule "server" {
+              jarName = "unimus.jar";
+              binary = "unimus";
+              user = "unimus";
+              group = "unimus";
+              listenAddress = "127.0.0.1";
+              port = 8085;
+              extraPorts = [ 5509 ];
+              stateDir = "/var/lib/unimus";
+              logDir = "/var/log/unimus";
+              configDir = "/etc/unimus";
+              propertiesFileName = "unimus.properties";
+              listenAddressProperty = "server.address";
+              portProperty = "server.port";
+            }
+            // {
+              reverseProxy = mkOption {
+                type = proxyModule;
+                default = { };
+                description = "Optional nginx reverse proxy configuration for the web UI.";
+              };
             };
-          };
-      });
+        }
+      );
       default = { };
       description = "Native Unimus server service.";
     };
@@ -440,7 +494,8 @@ in
     })
 
     (mkIf (cfg.core.enable && cfg.core.openFirewall) {
-      networking.firewall.allowedTCPPorts = optional (cfg.core.port > 0) cfg.core.port ++ cfg.core.extraPorts;
+      networking.firewall.allowedTCPPorts =
+        optional (cfg.core.port > 0) cfg.core.port ++ cfg.core.extraPorts;
     })
 
     (mkIf (cfg.server.enable && cfg.server.reverseProxy.enable) {

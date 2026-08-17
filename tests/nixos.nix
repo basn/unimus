@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> { } }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 let
   unimusModule = import ../modules/unimus.nix;
 
@@ -18,6 +20,8 @@ let
           ;;
       esac
     done
+
+    hostname > "$UNIMUS_STATE_DIR/hostname"
 
     cat > "$UNIMUS_STATE_DIR/index.html" <<EOF
     fake unimus
@@ -86,6 +90,7 @@ in
     machine.succeed("grep -q '^database.password=super-secret-password$' /etc/unimus/unimus.properties")
     machine.succeed("systemctl is-active unimus-core.service")
     machine.succeed("test -f /var/lib/unimus-core/core-status")
+    machine.succeed("test -s /var/lib/unimus/hostname")
     machine.succeed("curl -H 'Host: unimus.test' -fsS http://127.0.0.1:8080 | grep -q 'fake unimus'")
   '';
 })
