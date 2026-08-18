@@ -105,7 +105,6 @@ Example with `sops-nix`:
 ```nix
 {
   sops.secrets."unimus/database-password" = { };
-  sops.secrets."unimus/license-key" = { };
 
   services.unimus.server = {
     enable = true;
@@ -121,13 +120,42 @@ Example with `sops-nix`:
 
     propertiesFromFiles = {
       "database.password" = config.sops.secrets."unimus/database-password".path;
-      "license.key" = config.sops.secrets."unimus/license-key".path;
     };
   };
 }
 ```
 
-The file contents are read during `preStart` and appended into the generated properties file.
+The file contents are read during `preStart` and appended into the generated properties file. Use this only for properties whose value is the secret itself, such as `database.password`; do not use it for properties that expect a file path.
+
+## Offline Licensing
+
+Offline licensing uses a Spring profile. Pass it as an application argument so it is supplied after the JAR path:
+
+```nix
+{
+  services.unimus.server.args = [
+    "--spring.profiles.active=offline-licensing"
+  ];
+}
+```
+
+`license.key` expects the path to a license file. Stage a SOPS-managed license at a stable path, then set the property to that path:
+
+```nix
+{ config, lib, ... }:
+{
+  services.unimus.server.properties."license.key" =
+    "/etc/unimus/license.key";
+
+  systemd.services.unimus.preStart = lib.mkAfter ''
+    install -m0640 -o unimus -g unimus \
+      ${config.sops.secrets.UNIMUS_LICENSE_KEY.path} \
+      /etc/unimus/license.key
+  '';
+}
+```
+
+The offline license must be issued for Offline Mode by Unimus. If replacing an existing license, preserve its previous path where possible and confirm the key change in the Unimus UI.
 
 ## Examples
 
